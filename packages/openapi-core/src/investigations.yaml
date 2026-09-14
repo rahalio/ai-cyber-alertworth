@@ -1,0 +1,145 @@
+openapi: 3.1.0
+info:
+  title: Alertworth Investigations API
+  version: 0.1.0
+  description: |
+    Investigation cases, dispositions, and challenge of auto-dismissal.
+  x-domain: inv
+  x-product: alertworth
+servers:
+  - url: https://api.alertworth.local
+security:
+  - apiKey: []
+tags:
+  - name: Investigations
+    description: Cases, dispositions, and learning feedback
+paths:
+  /v1/investigations:
+    get:
+      operationId: listInvestigations
+      tags: [Investigations]
+      summary: List investigation cases
+      x-repository: InvestigationCase
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: status
+          in: query
+          schema:
+            $ref: ./investigations.schemas.yaml#/components/schemas/CaseStatus
+      responses:
+        '200':
+          description: Investigation cases page
+          content:
+            application/json:
+              schema:
+                $ref: ./investigations.schemas.yaml#/components/schemas/InvestigationCaseListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: openInvestigation
+      tags: [Investigations]
+      summary: Open an investigation case
+      x-repository: InvestigationCase
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./investigations.schemas.yaml#/components/schemas/InvestigationCaseCreate
+      responses:
+        '201':
+          description: Case opened
+          content:
+            application/json:
+              schema:
+                $ref: ./investigations.schemas.yaml#/components/schemas/InvestigationCaseResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/investigations/{caseId}/disposition:
+    parameters:
+      - name: caseId
+        in: path
+        required: true
+        schema:
+          $ref: ./investigations.schemas.yaml#/components/schemas/CaseId
+    post:
+      operationId: disposeInvestigation
+      tags: [Investigations]
+      summary: Record investigation disposition
+      x-repository: none
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./investigations.schemas.yaml#/components/schemas/DispositionCreate
+      responses:
+        '200':
+          description: Disposition recorded for scoring feedback
+          content:
+            application/json:
+              schema:
+                $ref: ./investigations.schemas.yaml#/components/schemas/InvestigationCaseResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/investigations/{caseId}/challenge-dismissal:
+    parameters:
+      - name: caseId
+        in: path
+        required: true
+        schema:
+          $ref: ./investigations.schemas.yaml#/components/schemas/CaseId
+    post:
+      operationId: challengeAutoDismissal
+      tags: [Investigations]
+      summary: Challenge auto-dismissal into queue
+      x-repository: none
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./investigations.schemas.yaml#/components/schemas/ChallengeDismissalRequest
+      responses:
+        '201':
+          description: Dismissed alert forced into queue
+          content:
+            application/json:
+              schema:
+                $ref: ./investigations.schemas.yaml#/components/schemas/QueuedAlertResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth

@@ -1,0 +1,198 @@
+openapi: 3.1.0
+info:
+  title: Alertworth Scoring API
+  version: 0.1.0
+  description: |
+    Detection-economics scores, alert listing, and dismissal policy lifecycle.
+  x-domain: scr
+  x-product: alertworth
+servers:
+  - url: https://api.alertworth.local
+security:
+  - apiKey: []
+tags:
+  - name: Scoring
+    description: Detection-economics scores and dismissal policy
+paths:
+  /v1/alerts:
+    get:
+      operationId: listAlerts
+      tags: [Scoring]
+      summary: List alerts with economic scores
+      x-repository: Alert
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: disposition
+          in: query
+          schema:
+            $ref: ./scoring.schemas.yaml#/components/schemas/AlertDisposition
+        - name: minWorthScore
+          in: query
+          schema:
+            type: number
+            format: float
+      responses:
+        '200':
+          description: Alerts with economic scores
+          content:
+            application/json:
+              schema:
+                $ref: ./scoring.schemas.yaml#/components/schemas/AlertListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/alerts/{alertId}/score:
+    parameters:
+      - name: alertId
+        in: path
+        required: true
+        schema:
+          $ref: ./scoring.schemas.yaml#/components/schemas/AlertId
+    get:
+      operationId: getAlertEconomicScore
+      tags: [Scoring]
+      summary: Get alert economic score
+      x-repository: Alert
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Expected loss versus analyst effort
+          content:
+            application/json:
+              schema:
+                $ref: ./scoring.schemas.yaml#/components/schemas/EconomicScoreResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/dismissal-policies:
+    get:
+      operationId: listDismissalPolicies
+      tags: [Scoring]
+      summary: List dismissal policies
+      x-repository: DismissalPolicy
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dismissal policies with back-test metrics
+          content:
+            application/json:
+              schema:
+                $ref: ./scoring.schemas.yaml#/components/schemas/DismissalPolicyListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createDismissalPolicy
+      tags: [Scoring]
+      summary: Create dismissal policy
+      x-repository: DismissalPolicy
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./scoring.schemas.yaml#/components/schemas/DismissalPolicyCreate
+      responses:
+        '201':
+          description: Policy created; inactive until approved
+          content:
+            application/json:
+              schema:
+                $ref: ./scoring.schemas.yaml#/components/schemas/DismissalPolicyResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/dismissal-policies/{policyId}/approve:
+    parameters:
+      - name: policyId
+        in: path
+        required: true
+        schema:
+          $ref: ./scoring.schemas.yaml#/components/schemas/PolicyId
+    post:
+      operationId: approveDismissalPolicy
+      tags: [Scoring]
+      summary: Approve dismissal policy
+      x-repository: none
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./scoring.schemas.yaml#/components/schemas/DismissalPolicyApproveRequest
+      responses:
+        '200':
+          description: Policy approved for auto-dismissal
+          content:
+            application/json:
+              schema:
+                $ref: ./scoring.schemas.yaml#/components/schemas/DismissalPolicyResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/dismissal-policies/{policyId}/back-test:
+    parameters:
+      - name: policyId
+        in: path
+        required: true
+        schema:
+          $ref: ./scoring.schemas.yaml#/components/schemas/PolicyId
+    post:
+      operationId: runDismissalBackTest
+      tags: [Scoring]
+      summary: Run dismissal back-test
+      x-repository: none
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./scoring.schemas.yaml#/components/schemas/DismissalBackTestRequest
+      responses:
+        '200':
+          description: Back-test result against historical true positives
+          content:
+            application/json:
+              schema:
+                $ref: ./scoring.schemas.yaml#/components/schemas/DismissalBackTestResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth

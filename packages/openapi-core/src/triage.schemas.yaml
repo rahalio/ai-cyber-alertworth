@@ -1,0 +1,321 @@
+openapi: 3.1.0
+info:
+  title: Triage domain schemas
+  version: 0.1.0
+  description: Capacity-capped queue, overflow routing, and containment actions.
+paths: {}
+components:
+  schemas:
+    ShiftId:
+      type: string
+      pattern: '^sft_[0-9A-HJKMNP-TV-Z]{26}$'
+      description: Prefixed triage shift id.
+
+    QueuedAlertId:
+      type: string
+      pattern: '^que_[0-9A-HJKMNP-TV-Z]{26}$'
+      description: Prefixed queued-alert id.
+
+    OverflowRouteId:
+      type: string
+      pattern: '^ovf_[0-9A-HJKMNP-TV-Z]{26}$'
+      description: Prefixed overflow route id.
+
+    ActionId:
+      type: string
+      pattern: '^act_[0-9A-HJKMNP-TV-Z]{26}$'
+      description: Prefixed containment action id.
+
+    AlertId:
+      type: string
+      pattern: '^alt_[0-9A-HJKMNP-TV-Z]{26}$'
+      description: Prefixed alert id (scoring domain).
+
+    ShiftStatus:
+      type: string
+      enum: [open, closed]
+
+    OverflowAction:
+      type: string
+      enum: [defer, auto_contain, escalate_mdr]
+
+    ContainmentActionType:
+      type: string
+      enum: [isolate_host, disable_account, block_indicator, quarantine_mail]
+
+    ContainmentStatus:
+      type: string
+      enum: [pending, executed, overridden, failed]
+
+    TriageShift:
+      x-dynamodb:
+        domain: TRIAGE
+        entityType: TRIAGE_SHIFT
+        entityTypePk: TRIAGE_SHIFTS
+        pkPattern: entity
+        pkPatternTemplate: "TRIAGE_SHIFT#${id}"
+        skPatternTemplate: "METADATA"
+        tableType: core
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+      type: object
+      required: [id, accountableLeadId, capacitySlots, status, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/ShiftId'
+        accountableLeadId:
+          type: string
+        capacitySlots:
+          type: integer
+        queuedCount:
+          type: integer
+        status:
+          $ref: '#/components/schemas/ShiftStatus'
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    TriageShiftCreate:
+      type: object
+      required: [accountableLeadId, capacitySlots, startsAt, endsAt]
+      properties:
+        accountableLeadId:
+          type: string
+        capacitySlots:
+          type: integer
+          minimum: 1
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+
+    QueuedAlert:
+      x-dynamodb:
+        domain: TRIAGE
+        entityType: QUEUED_ALERT
+        entityTypePk: QUEUED_ALERTS
+        pkPattern: entity
+        pkPatternTemplate: "QUEUED_ALERT#${id}"
+        skPatternTemplate: "METADATA"
+        tableType: core
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+      type: object
+      required: [id, alertId, shiftId, position, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/QueuedAlertId'
+        alertId:
+          $ref: '#/components/schemas/AlertId'
+        shiftId:
+          $ref: '#/components/schemas/ShiftId'
+        position:
+          type: integer
+        worthScore:
+          type: number
+          format: float
+        admittedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AdmitAlertRequest:
+      type: object
+      required: [alertId, shiftId]
+      properties:
+        alertId:
+          $ref: '#/components/schemas/AlertId'
+        shiftId:
+          $ref: '#/components/schemas/ShiftId'
+
+    OverflowRoute:
+      x-dynamodb:
+        domain: TRIAGE
+        entityType: OVERFLOW_ROUTE
+        entityTypePk: OVERFLOW_ROUTES
+        pkPattern: entity
+        pkPatternTemplate: "OVERFLOW_ROUTE#${id}"
+        skPatternTemplate: "METADATA"
+        tableType: core
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+      type: object
+      required: [id, alertId, action, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/OverflowRouteId'
+        alertId:
+          $ref: '#/components/schemas/AlertId'
+        action:
+          $ref: '#/components/schemas/OverflowAction'
+        decidedBy:
+          type: string
+        decidedAt:
+          type: string
+          format: date-time
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    OverflowRouteCreate:
+      type: object
+      required: [alertId, action]
+      properties:
+        alertId:
+          $ref: '#/components/schemas/AlertId'
+        action:
+          $ref: '#/components/schemas/OverflowAction'
+        notes:
+          type: string
+
+    ContainmentAction:
+      x-dynamodb:
+        domain: TRIAGE
+        entityType: CONTAINMENT_ACTION
+        entityTypePk: CONTAINMENT_ACTIONS
+        pkPattern: entity
+        pkPatternTemplate: "CONTAINMENT_ACTION#${id}"
+        skPatternTemplate: "METADATA"
+        tableType: core
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+      type: object
+      required: [id, alertId, actionType, status, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/ActionId'
+        alertId:
+          $ref: '#/components/schemas/AlertId'
+        actionType:
+          $ref: '#/components/schemas/ContainmentActionType'
+        status:
+          $ref: '#/components/schemas/ContainmentStatus'
+        policyVersion:
+          type: string
+        accountableRoleId:
+          type: string
+        overrideRationale:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ContainmentActionCreate:
+      type: object
+      required: [alertId, actionType, accountableRoleId]
+      properties:
+        alertId:
+          $ref: '#/components/schemas/AlertId'
+        actionType:
+          $ref: '#/components/schemas/ContainmentActionType'
+        accountableRoleId:
+          type: string
+        policyVersion:
+          type: string
+
+    ContainmentOverrideRequest:
+      type: object
+      required: [rationale]
+      properties:
+        rationale:
+          type: string
+
+    TriageShiftListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TriageShift'
+        nextCursor:
+          type: string
+
+    QueuedAlertListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueuedAlert'
+        nextCursor:
+          type: string
+
+    TriageShiftResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/TriageShift'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    TriageShiftListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/TriageShiftListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    QueuedAlertResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/QueuedAlert'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    QueuedAlertListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/QueuedAlertListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    OverflowRouteResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/OverflowRoute'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    ContainmentActionResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ContainmentAction'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

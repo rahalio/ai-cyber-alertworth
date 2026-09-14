@@ -1,0 +1,224 @@
+openapi: 3.1.0
+info:
+  title: Alertworth Triage API
+  version: 0.1.0
+  description: |
+    Capacity-capped triage queue, overflow routing, and containment actions.
+  x-domain: trg
+  x-product: alertworth
+servers:
+  - url: https://api.alertworth.local
+security:
+  - apiKey: []
+tags:
+  - name: Triage
+    description: Capacity-capped queue and overflow routing
+paths:
+  /v1/triage/shifts:
+    get:
+      operationId: listTriageShifts
+      tags: [Triage]
+      summary: List triage shifts
+      x-repository: TriageShift
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Shifts with capacity and accountable lead
+          content:
+            application/json:
+              schema:
+                $ref: ./triage.schemas.yaml#/components/schemas/TriageShiftListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: openTriageShift
+      tags: [Triage]
+      summary: Open a triage shift
+      description: >
+        Opens a shift only when an accountable SOC lead is named. Capacity
+        caps the human queue for the shift.
+      x-repository: TriageShift
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./triage.schemas.yaml#/components/schemas/TriageShiftCreate
+      responses:
+        '201':
+          description: Shift opened
+          content:
+            application/json:
+              schema:
+                $ref: ./triage.schemas.yaml#/components/schemas/TriageShiftResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/triage/queue:
+    get:
+      operationId: listTriageQueue
+      tags: [Triage]
+      summary: List capacity-capped triage queue
+      x-repository: QueuedAlert
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: shiftId
+          in: query
+          schema:
+            $ref: ./triage.schemas.yaml#/components/schemas/ShiftId
+      responses:
+        '200':
+          description: Capacity-capped triage queue
+          content:
+            application/json:
+              schema:
+                $ref: ./triage.schemas.yaml#/components/schemas/QueuedAlertListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/triage/queue/admit:
+    post:
+      operationId: admitAlertToQueue
+      tags: [Triage]
+      summary: Admit alert to triage queue
+      x-repository: none
+      security:
+        - apiKey: []
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./triage.schemas.yaml#/components/schemas/AdmitAlertRequest
+      responses:
+        '201':
+          description: Alert admitted to queue
+          content:
+            application/json:
+              schema:
+                $ref: ./triage.schemas.yaml#/components/schemas/QueuedAlertResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '409':
+          $ref: ./common/responses.yaml#/components/responses/Conflict
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/triage/overflow:
+    post:
+      operationId: routeOverflow
+      tags: [Triage]
+      summary: Route overflow explicitly
+      x-repository: none
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./triage.schemas.yaml#/components/schemas/OverflowRouteCreate
+      responses:
+        '201':
+          description: Overflow routed explicitly
+          content:
+            application/json:
+              schema:
+                $ref: ./triage.schemas.yaml#/components/schemas/OverflowRouteResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/containment-actions:
+    post:
+      operationId: executeContainmentAction
+      tags: [Triage]
+      summary: Execute containment action
+      x-repository: ContainmentAction
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./triage.schemas.yaml#/components/schemas/ContainmentActionCreate
+      responses:
+        '202':
+          description: Containment accepted with immutable action log
+          content:
+            application/json:
+              schema:
+                $ref: ./triage.schemas.yaml#/components/schemas/ContainmentActionResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/containment-actions/{actionId}/override:
+    parameters:
+      - name: actionId
+        in: path
+        required: true
+        schema:
+          $ref: ./triage.schemas.yaml#/components/schemas/ActionId
+    post:
+      operationId: overrideContainmentAction
+      tags: [Triage]
+      summary: Override containment action
+      x-repository: none
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./triage.schemas.yaml#/components/schemas/ContainmentOverrideRequest
+      responses:
+        '200':
+          description: Override recorded
+          content:
+            application/json:
+              schema:
+                $ref: ./triage.schemas.yaml#/components/schemas/ContainmentActionResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth

@@ -152,8 +152,20 @@ flowchart TD
 
 ## OpenAPI skeleton
 
-Canonical HTTP surface lives in sibling [openapi.yaml](openapi.yaml). Summary:
+Canonical HTTP surface lives under [`packages/openapi-core/src/`](packages/openapi-core/src/) — **one YAML per domain** (plus `common/` and `identity`). Historical monolith: [`docs/reference/openapi-monolith.v0.1.yaml`](docs/reference/openapi-monolith.v0.1.yaml).
 
-- **Base path:** `/v1/...`
+| Domain | Spec |
+|--------|------|
+| Events | [`events.yaml`](packages/openapi-core/src/events.yaml) |
+| Scoring | [`scoring.yaml`](packages/openapi-core/src/scoring.yaml) |
+| Triage | [`triage.yaml`](packages/openapi-core/src/triage.yaml) |
+| Investigations | [`investigations.yaml`](packages/openapi-core/src/investigations.yaml) |
+| Baselines | [`baselines.yaml`](packages/openapi-core/src/baselines.yaml) |
+| Controls | [`controls.yaml`](packages/openapi-core/src/controls.yaml) |
+| Indicators | [`indicators.yaml`](packages/openapi-core/src/indicators.yaml) |
+| Reporting | [`reporting.yaml`](packages/openapi-core/src/reporting.yaml) |
+| Identity (shared auth) | [`identity.yaml`](packages/openapi-core/src/identity.yaml) |
+
+- **Base path:** `/v1/...` (identity under `/v0/...`)
 - **Auth:** `X-API-Key` for SIEM/EDR/ITSM connectors; Bearer JWT for SOC, risk, and admin operators.
 - **Resource groups:** Events, Scoring, Triage, Investigations, Baselines, Controls, Indicators, Reporting.

@@ -1,0 +1,236 @@
+openapi: 3.1.0
+info:
+  title: Scoring domain schemas
+  version: 0.1.0
+  description: Detection-economics scores and dismissal policy.
+paths: {}
+components:
+  schemas:
+    AlertId:
+      type: string
+      pattern: '^alt_[0-9A-HJKMNP-TV-Z]{26}$'
+      description: Prefixed alert id.
+
+    PolicyId:
+      type: string
+      pattern: '^pol_[0-9A-HJKMNP-TV-Z]{26}$'
+      description: Prefixed dismissal policy id.
+
+    AlertDisposition:
+      type: string
+      enum: [scored, dismissed, queued, investigating, closed]
+
+    PolicyStatus:
+      type: string
+      enum: [draft, approved, suspended]
+
+    Alert:
+      x-dynamodb:
+        domain: SCORING
+        entityType: ALERT
+        entityTypePk: ALERTS
+        pkPattern: entity
+        pkPatternTemplate: "ALERT#${id}"
+        skPatternTemplate: "METADATA"
+        tableType: core
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+      type: object
+      required: [id, eventId, disposition, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/AlertId'
+        eventId:
+          type: string
+          pattern: '^evt_[0-9A-HJKMNP-TV-Z]{26}$'
+        disposition:
+          $ref: '#/components/schemas/AlertDisposition'
+        worthScore:
+          type: number
+          format: float
+        vendorSeverity:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    EconomicScore:
+      type: object
+      required: [alertId, expectedLossIfIgnored, estimatedAnalystMinutes, worthScore]
+      properties:
+        alertId:
+          $ref: '#/components/schemas/AlertId'
+        expectedLossIfIgnored:
+          $ref: ./common/primitives.yaml#/components/schemas/Money
+        estimatedAnalystMinutes:
+          type: number
+          format: float
+        worthScore:
+          type: number
+          format: float
+        factors:
+          type: object
+          additionalProperties:
+            type: string
+
+    DismissalPolicy:
+      x-dynamodb:
+        domain: SCORING
+        entityType: DISMISSAL_POLICY
+        entityTypePk: DISMISSAL_POLICYS
+        pkPattern: entity
+        pkPatternTemplate: "DISMISSAL_POLICY#${id}"
+        skPatternTemplate: "METADATA"
+        tableType: core
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+      type: object
+      required: [id, name, status, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/PolicyId'
+        name:
+          type: string
+        status:
+          $ref: '#/components/schemas/PolicyStatus'
+        alertClass:
+          type: string
+        maxFalseDismissalRate:
+          type: number
+          format: float
+        lastBackTestFalseDismissalRate:
+          type: number
+          format: float
+        ownerId:
+          type: string
+        rules:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    DismissalPolicyCreate:
+      type: object
+      required: [name, alertClass]
+      properties:
+        name:
+          type: string
+        alertClass:
+          type: string
+        rules:
+          type: array
+          items:
+            type: string
+        ownerId:
+          type: string
+
+    DismissalPolicyApproveRequest:
+      type: object
+      required: [approverId]
+      properties:
+        approverId:
+          type: string
+        maxFalseDismissalRate:
+          type: number
+          format: float
+
+    DismissalBackTestRequest:
+      type: object
+      required: [windowDays]
+      properties:
+        windowDays:
+          type: integer
+          minimum: 7
+          maximum: 365
+
+    DismissalBackTest:
+      type: object
+      properties:
+        policyId:
+          $ref: '#/components/schemas/PolicyId'
+        windowDays:
+          type: integer
+        historicalTruePositives:
+          type: integer
+        wouldHaveDismissed:
+          type: integer
+        falseDismissalRate:
+          type: number
+          format: float
+        passedGate:
+          type: boolean
+
+    AlertListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Alert'
+        nextCursor:
+          type: string
+
+    DismissalPolicyListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DismissalPolicy'
+        nextCursor:
+          type: string
+
+    AlertListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/AlertListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    EconomicScoreResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/EconomicScore'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    DismissalPolicyResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/DismissalPolicy'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    DismissalPolicyListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/DismissalPolicyListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    DismissalBackTestResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/DismissalBackTest'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

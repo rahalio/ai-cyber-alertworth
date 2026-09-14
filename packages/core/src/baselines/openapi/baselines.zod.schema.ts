@@ -1,0 +1,785 @@
+import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core';
+import { z } from 'zod';
+
+const createBehaviourBaseline_Body = z
+  .object({
+    name: z.string(),
+    population: z.string(),
+    purpose: z.string(),
+    lawfulBasis: z.string(),
+    privacyOfficerId: z.string().optional(),
+  })
+  .passthrough();
+const decideAttackPathRecommendation_Body = z
+  .object({
+    decision: z.enum(['accepted', 'rejected']),
+    rationale: z.string().optional(),
+  })
+  .passthrough();
+const Problem = z
+  .object({
+    type: z.string().url(),
+    title: z.string(),
+    status: z.number().int(),
+    detail: z.string(),
+    instance: z.string().url(),
+    code: z.string(),
+  })
+  .partial()
+  .passthrough();
+const BaselineId = z.string();
+const BaselineStatus = z.enum(['draft', 'active', 'suspended']);
+const BehaviourBaseline = z
+  .object({
+    id: z.string().regex(/^bsl_[0-9A-HJKMNP-TV-Z]{26}$/),
+    name: z.string(),
+    status: z.enum(['draft', 'active', 'suspended']),
+    population: z.string().optional(),
+    purpose: z.string().optional(),
+    lawfulBasis: z.string(),
+    privacyOfficerId: z.string().optional(),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .passthrough();
+const BehaviourBaselineListData = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          id: z.string().regex(/^bsl_[0-9A-HJKMNP-TV-Z]{26}$/),
+          name: z.string(),
+          status: z.enum(['draft', 'active', 'suspended']),
+          population: z.string().optional(),
+          purpose: z.string().optional(),
+          lawfulBasis: z.string(),
+          privacyOfficerId: z.string().optional(),
+          createdAt: z.string().datetime({ offset: true }),
+          updatedAt: z.string().datetime({ offset: true }),
+        })
+        .passthrough()
+    ),
+    nextCursor: z.string().optional(),
+  })
+  .passthrough();
+const ResponseMeta = z
+  .object({
+    requestId: z.string().uuid(),
+    correlationId: z.string(),
+    generatedAt: z.string().datetime({ offset: true }),
+  })
+  .partial()
+  .passthrough();
+const BehaviourBaselineListResponse = z
+  .object({
+    data: z
+      .object({
+        items: z.array(
+          z
+            .object({
+              id: z.string().regex(/^bsl_[0-9A-HJKMNP-TV-Z]{26}$/),
+              name: z.string(),
+              status: z.enum(['draft', 'active', 'suspended']),
+              population: z.string().optional(),
+              purpose: z.string().optional(),
+              lawfulBasis: z.string(),
+              privacyOfficerId: z.string().optional(),
+              createdAt: z.string().datetime({ offset: true }),
+              updatedAt: z.string().datetime({ offset: true }),
+            })
+            .passthrough()
+        ),
+        nextCursor: z.string().optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const BehaviourBaselineCreate = z
+  .object({
+    name: z.string(),
+    population: z.string(),
+    purpose: z.string(),
+    lawfulBasis: z.string(),
+    privacyOfficerId: z.string().optional(),
+  })
+  .passthrough();
+const BehaviourBaselineResponse = z
+  .object({
+    data: z
+      .object({
+        id: z.string().regex(/^bsl_[0-9A-HJKMNP-TV-Z]{26}$/),
+        name: z.string(),
+        status: z.enum(['draft', 'active', 'suspended']),
+        population: z.string().optional(),
+        purpose: z.string().optional(),
+        lawfulBasis: z.string(),
+        privacyOfficerId: z.string().optional(),
+        createdAt: z.string().datetime({ offset: true }),
+        updatedAt: z.string().datetime({ offset: true }),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const AnomalyId = z.string();
+const AnomalyStatus = z.enum(['raised', 'scored', 'queued', 'dismissed']);
+const AnomalyDetection = z
+  .object({
+    id: z.string().regex(/^anm_[0-9A-HJKMNP-TV-Z]{26}$/),
+    baselineId: z.string().regex(/^bsl_[0-9A-HJKMNP-TV-Z]{26}$/),
+    alertId: z
+      .string()
+      .regex(/^alt_[0-9A-HJKMNP-TV-Z]{26}$/)
+      .optional(),
+    status: z.enum(['raised', 'scored', 'queued', 'dismissed']),
+    description: z.string().optional(),
+    raisedAt: z.string().datetime({ offset: true }).optional(),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .passthrough();
+const AnomalyDetectionListData = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          id: z.string().regex(/^anm_[0-9A-HJKMNP-TV-Z]{26}$/),
+          baselineId: z.string().regex(/^bsl_[0-9A-HJKMNP-TV-Z]{26}$/),
+          alertId: z
+            .string()
+            .regex(/^alt_[0-9A-HJKMNP-TV-Z]{26}$/)
+            .optional(),
+          status: z.enum(['raised', 'scored', 'queued', 'dismissed']),
+          description: z.string().optional(),
+          raisedAt: z.string().datetime({ offset: true }).optional(),
+          createdAt: z.string().datetime({ offset: true }),
+          updatedAt: z.string().datetime({ offset: true }),
+        })
+        .passthrough()
+    ),
+    nextCursor: z.string().optional(),
+  })
+  .passthrough();
+const AnomalyDetectionListResponse = z
+  .object({
+    data: z
+      .object({
+        items: z.array(
+          z
+            .object({
+              id: z.string().regex(/^anm_[0-9A-HJKMNP-TV-Z]{26}$/),
+              baselineId: z.string().regex(/^bsl_[0-9A-HJKMNP-TV-Z]{26}$/),
+              alertId: z
+                .string()
+                .regex(/^alt_[0-9A-HJKMNP-TV-Z]{26}$/)
+                .optional(),
+              status: z.enum(['raised', 'scored', 'queued', 'dismissed']),
+              description: z.string().optional(),
+              raisedAt: z.string().datetime({ offset: true }).optional(),
+              createdAt: z.string().datetime({ offset: true }),
+              updatedAt: z.string().datetime({ offset: true }),
+            })
+            .passthrough()
+        ),
+        nextCursor: z.string().optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const PathId = z.string();
+const AttackPathStatus = z.enum(['recommended', 'accepted', 'rejected']);
+const AttackPath = z
+  .object({
+    id: z.string().regex(/^ath_[0-9A-HJKMNP-TV-Z]{26}$/),
+    entryPoint: z.string(),
+    likelyPath: z.array(z.string()).optional(),
+    recommendedAction: z.string().optional(),
+    assetCriticality: z.string().optional(),
+    status: z.enum(['recommended', 'accepted', 'rejected']),
+    explanation: z.string().optional(),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .passthrough();
+const AttackPathListData = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          id: z.string().regex(/^ath_[0-9A-HJKMNP-TV-Z]{26}$/),
+          entryPoint: z.string(),
+          likelyPath: z.array(z.string()).optional(),
+          recommendedAction: z.string().optional(),
+          assetCriticality: z.string().optional(),
+          status: z.enum(['recommended', 'accepted', 'rejected']),
+          explanation: z.string().optional(),
+          createdAt: z.string().datetime({ offset: true }),
+          updatedAt: z.string().datetime({ offset: true }),
+        })
+        .passthrough()
+    ),
+    nextCursor: z.string().optional(),
+  })
+  .passthrough();
+const AttackPathListResponse = z
+  .object({
+    data: z
+      .object({
+        items: z.array(
+          z
+            .object({
+              id: z.string().regex(/^ath_[0-9A-HJKMNP-TV-Z]{26}$/),
+              entryPoint: z.string(),
+              likelyPath: z.array(z.string()).optional(),
+              recommendedAction: z.string().optional(),
+              assetCriticality: z.string().optional(),
+              status: z.enum(['recommended', 'accepted', 'rejected']),
+              explanation: z.string().optional(),
+              createdAt: z.string().datetime({ offset: true }),
+              updatedAt: z.string().datetime({ offset: true }),
+            })
+            .passthrough()
+        ),
+        nextCursor: z.string().optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const AttackPathDecision = z.enum(['accepted', 'rejected']);
+const AttackPathDecisionRequest = z
+  .object({
+    decision: z.enum(['accepted', 'rejected']),
+    rationale: z.string().optional(),
+  })
+  .passthrough();
+const AttackPathResponse = z
+  .object({
+    data: z
+      .object({
+        id: z.string().regex(/^ath_[0-9A-HJKMNP-TV-Z]{26}$/),
+        entryPoint: z.string(),
+        likelyPath: z.array(z.string()).optional(),
+        recommendedAction: z.string().optional(),
+        assetCriticality: z.string().optional(),
+        status: z.enum(['recommended', 'accepted', 'rejected']),
+        explanation: z.string().optional(),
+        createdAt: z.string().datetime({ offset: true }),
+        updatedAt: z.string().datetime({ offset: true }),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+
+export const schemas: any = {
+  createBehaviourBaseline_Body,
+  decideAttackPathRecommendation_Body,
+  Problem,
+  BaselineId,
+  BaselineStatus,
+  BehaviourBaseline,
+  BehaviourBaselineListData,
+  ResponseMeta,
+  BehaviourBaselineListResponse,
+  BehaviourBaselineCreate,
+  BehaviourBaselineResponse,
+  AnomalyId,
+  AnomalyStatus,
+  AnomalyDetection,
+  AnomalyDetectionListData,
+  AnomalyDetectionListResponse,
+  PathId,
+  AttackPathStatus,
+  AttackPath,
+  AttackPathListData,
+  AttackPathListResponse,
+  AttackPathDecision,
+  AttackPathDecisionRequest,
+  AttackPathResponse,
+};
+
+const endpoints = makeApi([
+  {
+    method: 'get',
+    path: '/v1/anomalies',
+    alias: 'listAnomalyDetections',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'cursor',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().gte(1).lte(200).optional().default(50),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  id: z.string().regex(/^anm_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  baselineId: z.string().regex(/^bsl_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  alertId: z
+                    .string()
+                    .regex(/^alt_[0-9A-HJKMNP-TV-Z]{26}$/)
+                    .optional(),
+                  status: z.enum(['raised', 'scored', 'queued', 'dismissed']),
+                  description: z.string().optional(),
+                  raisedAt: z.string().datetime({ offset: true }).optional(),
+                  createdAt: z.string().datetime({ offset: true }),
+                  updatedAt: z.string().datetime({ offset: true }),
+                })
+                .passthrough()
+            ),
+            nextCursor: z.string().optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v1/attack-paths',
+    alias: 'listAttackPaths',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'cursor',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().gte(1).lte(200).optional().default(50),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  id: z.string().regex(/^ath_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  entryPoint: z.string(),
+                  likelyPath: z.array(z.string()).optional(),
+                  recommendedAction: z.string().optional(),
+                  assetCriticality: z.string().optional(),
+                  status: z.enum(['recommended', 'accepted', 'rejected']),
+                  explanation: z.string().optional(),
+                  createdAt: z.string().datetime({ offset: true }),
+                  updatedAt: z.string().datetime({ offset: true }),
+                })
+                .passthrough()
+            ),
+            nextCursor: z.string().optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/attack-paths/:pathId/decision',
+    alias: 'decideAttackPathRecommendation',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: decideAttackPathRecommendation_Body,
+      },
+      {
+        name: 'pathId',
+        type: 'Path',
+        schema: z.string().regex(/^ath_[0-9A-HJKMNP-TV-Z]{26}$/),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string().regex(/^ath_[0-9A-HJKMNP-TV-Z]{26}$/),
+            entryPoint: z.string(),
+            likelyPath: z.array(z.string()).optional(),
+            recommendedAction: z.string().optional(),
+            assetCriticality: z.string().optional(),
+            status: z.enum(['recommended', 'accepted', 'rejected']),
+            explanation: z.string().optional(),
+            createdAt: z.string().datetime({ offset: true }),
+            updatedAt: z.string().datetime({ offset: true }),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v1/baselines',
+    alias: 'listBehaviourBaselines',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'cursor',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().gte(1).lte(200).optional().default(50),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  id: z.string().regex(/^bsl_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  name: z.string(),
+                  status: z.enum(['draft', 'active', 'suspended']),
+                  population: z.string().optional(),
+                  purpose: z.string().optional(),
+                  lawfulBasis: z.string(),
+                  privacyOfficerId: z.string().optional(),
+                  createdAt: z.string().datetime({ offset: true }),
+                  updatedAt: z.string().datetime({ offset: true }),
+                })
+                .passthrough()
+            ),
+            nextCursor: z.string().optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/baselines',
+    alias: 'createBehaviourBaseline',
+    description: `Baseline requires population, purpose, and lawful basis before it can open investigation cases.
+`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: createBehaviourBaseline_Body,
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string().regex(/^bsl_[0-9A-HJKMNP-TV-Z]{26}$/),
+            name: z.string(),
+            status: z.enum(['draft', 'active', 'suspended']),
+            population: z.string().optional(),
+            purpose: z.string().optional(),
+            lawfulBasis: z.string(),
+            privacyOfficerId: z.string().optional(),
+            createdAt: z.string().datetime({ offset: true }),
+            updatedAt: z.string().datetime({ offset: true }),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 422,
+        description: `Semantically invalid request (e.g. PACK_EMPTY)`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/baselines/:baselineId/activate',
+    alias: 'activateBehaviourBaseline',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'baselineId',
+        type: 'Path',
+        schema: z.string().regex(/^bsl_[0-9A-HJKMNP-TV-Z]{26}$/),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string().regex(/^bsl_[0-9A-HJKMNP-TV-Z]{26}$/),
+            name: z.string(),
+            status: z.enum(['draft', 'active', 'suspended']),
+            population: z.string().optional(),
+            purpose: z.string().optional(),
+            lawfulBasis: z.string(),
+            privacyOfficerId: z.string().optional(),
+            createdAt: z.string().datetime({ offset: true }),
+            updatedAt: z.string().datetime({ offset: true }),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+]);
+
+export const api: any = new Zodios(
+  'https://api.ddd-codegen-starter.local/v1',
+  endpoints
+);
+
+export function createApiClient(baseUrl: string, options?: ZodiosOptions): any {
+  return new Zodios(baseUrl, endpoints, options);
+}

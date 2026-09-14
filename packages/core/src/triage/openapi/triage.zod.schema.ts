@@ -1,0 +1,928 @@
+import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core';
+import { z } from 'zod';
+
+const openTriageShift_Body = z
+  .object({
+    accountableLeadId: z.string(),
+    capacitySlots: z.number().int().gte(1),
+    startsAt: z.string().datetime({ offset: true }),
+    endsAt: z.string().datetime({ offset: true }),
+  })
+  .passthrough();
+const admitAlertToQueue_Body = z
+  .object({
+    alertId: z.string().regex(/^alt_[0-9A-HJKMNP-TV-Z]{26}$/),
+    shiftId: z.string().regex(/^sft_[0-9A-HJKMNP-TV-Z]{26}$/),
+  })
+  .passthrough();
+const routeOverflow_Body = z
+  .object({
+    alertId: z.string().regex(/^alt_[0-9A-HJKMNP-TV-Z]{26}$/),
+    action: z.enum(['defer', 'auto_contain', 'escalate_mdr']),
+    notes: z.string().optional(),
+  })
+  .passthrough();
+const executeContainmentAction_Body = z
+  .object({
+    alertId: z.string().regex(/^alt_[0-9A-HJKMNP-TV-Z]{26}$/),
+    actionType: z.enum([
+      'isolate_host',
+      'disable_account',
+      'block_indicator',
+      'quarantine_mail',
+    ]),
+    accountableRoleId: z.string(),
+    policyVersion: z.string().optional(),
+  })
+  .passthrough();
+const Problem = z
+  .object({
+    type: z.string().url(),
+    title: z.string(),
+    status: z.number().int(),
+    detail: z.string(),
+    instance: z.string().url(),
+    code: z.string(),
+  })
+  .partial()
+  .passthrough();
+const ShiftId = z.string();
+const ShiftStatus = z.enum(['open', 'closed']);
+const TriageShift = z
+  .object({
+    id: z.string().regex(/^sft_[0-9A-HJKMNP-TV-Z]{26}$/),
+    accountableLeadId: z.string(),
+    capacitySlots: z.number().int(),
+    queuedCount: z.number().int().optional(),
+    status: z.enum(['open', 'closed']),
+    startsAt: z.string().datetime({ offset: true }).optional(),
+    endsAt: z.string().datetime({ offset: true }).optional(),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .passthrough();
+const TriageShiftListData = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          id: z.string().regex(/^sft_[0-9A-HJKMNP-TV-Z]{26}$/),
+          accountableLeadId: z.string(),
+          capacitySlots: z.number().int(),
+          queuedCount: z.number().int().optional(),
+          status: z.enum(['open', 'closed']),
+          startsAt: z.string().datetime({ offset: true }).optional(),
+          endsAt: z.string().datetime({ offset: true }).optional(),
+          createdAt: z.string().datetime({ offset: true }),
+          updatedAt: z.string().datetime({ offset: true }),
+        })
+        .passthrough()
+    ),
+    nextCursor: z.string().optional(),
+  })
+  .passthrough();
+const ResponseMeta = z
+  .object({
+    requestId: z.string().uuid(),
+    correlationId: z.string(),
+    generatedAt: z.string().datetime({ offset: true }),
+  })
+  .partial()
+  .passthrough();
+const TriageShiftListResponse = z
+  .object({
+    data: z
+      .object({
+        items: z.array(
+          z
+            .object({
+              id: z.string().regex(/^sft_[0-9A-HJKMNP-TV-Z]{26}$/),
+              accountableLeadId: z.string(),
+              capacitySlots: z.number().int(),
+              queuedCount: z.number().int().optional(),
+              status: z.enum(['open', 'closed']),
+              startsAt: z.string().datetime({ offset: true }).optional(),
+              endsAt: z.string().datetime({ offset: true }).optional(),
+              createdAt: z.string().datetime({ offset: true }),
+              updatedAt: z.string().datetime({ offset: true }),
+            })
+            .passthrough()
+        ),
+        nextCursor: z.string().optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const TriageShiftCreate = z
+  .object({
+    accountableLeadId: z.string(),
+    capacitySlots: z.number().int().gte(1),
+    startsAt: z.string().datetime({ offset: true }),
+    endsAt: z.string().datetime({ offset: true }),
+  })
+  .passthrough();
+const TriageShiftResponse = z
+  .object({
+    data: z
+      .object({
+        id: z.string().regex(/^sft_[0-9A-HJKMNP-TV-Z]{26}$/),
+        accountableLeadId: z.string(),
+        capacitySlots: z.number().int(),
+        queuedCount: z.number().int().optional(),
+        status: z.enum(['open', 'closed']),
+        startsAt: z.string().datetime({ offset: true }).optional(),
+        endsAt: z.string().datetime({ offset: true }).optional(),
+        createdAt: z.string().datetime({ offset: true }),
+        updatedAt: z.string().datetime({ offset: true }),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const QueuedAlertId = z.string();
+const AlertId = z.string();
+const QueuedAlert = z
+  .object({
+    id: z.string().regex(/^que_[0-9A-HJKMNP-TV-Z]{26}$/),
+    alertId: z.string().regex(/^alt_[0-9A-HJKMNP-TV-Z]{26}$/),
+    shiftId: z.string().regex(/^sft_[0-9A-HJKMNP-TV-Z]{26}$/),
+    position: z.number().int(),
+    worthScore: z.number().optional(),
+    admittedAt: z.string().datetime({ offset: true }).optional(),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .passthrough();
+const QueuedAlertListData = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          id: z.string().regex(/^que_[0-9A-HJKMNP-TV-Z]{26}$/),
+          alertId: z.string().regex(/^alt_[0-9A-HJKMNP-TV-Z]{26}$/),
+          shiftId: z.string().regex(/^sft_[0-9A-HJKMNP-TV-Z]{26}$/),
+          position: z.number().int(),
+          worthScore: z.number().optional(),
+          admittedAt: z.string().datetime({ offset: true }).optional(),
+          createdAt: z.string().datetime({ offset: true }),
+          updatedAt: z.string().datetime({ offset: true }),
+        })
+        .passthrough()
+    ),
+    nextCursor: z.string().optional(),
+  })
+  .passthrough();
+const QueuedAlertListResponse = z
+  .object({
+    data: z
+      .object({
+        items: z.array(
+          z
+            .object({
+              id: z.string().regex(/^que_[0-9A-HJKMNP-TV-Z]{26}$/),
+              alertId: z.string().regex(/^alt_[0-9A-HJKMNP-TV-Z]{26}$/),
+              shiftId: z.string().regex(/^sft_[0-9A-HJKMNP-TV-Z]{26}$/),
+              position: z.number().int(),
+              worthScore: z.number().optional(),
+              admittedAt: z.string().datetime({ offset: true }).optional(),
+              createdAt: z.string().datetime({ offset: true }),
+              updatedAt: z.string().datetime({ offset: true }),
+            })
+            .passthrough()
+        ),
+        nextCursor: z.string().optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const AdmitAlertRequest = z
+  .object({
+    alertId: z.string().regex(/^alt_[0-9A-HJKMNP-TV-Z]{26}$/),
+    shiftId: z.string().regex(/^sft_[0-9A-HJKMNP-TV-Z]{26}$/),
+  })
+  .passthrough();
+const QueuedAlertResponse = z
+  .object({
+    data: z
+      .object({
+        id: z.string().regex(/^que_[0-9A-HJKMNP-TV-Z]{26}$/),
+        alertId: z.string().regex(/^alt_[0-9A-HJKMNP-TV-Z]{26}$/),
+        shiftId: z.string().regex(/^sft_[0-9A-HJKMNP-TV-Z]{26}$/),
+        position: z.number().int(),
+        worthScore: z.number().optional(),
+        admittedAt: z.string().datetime({ offset: true }).optional(),
+        createdAt: z.string().datetime({ offset: true }),
+        updatedAt: z.string().datetime({ offset: true }),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const OverflowAction = z.enum(['defer', 'auto_contain', 'escalate_mdr']);
+const OverflowRouteCreate = z
+  .object({
+    alertId: z.string().regex(/^alt_[0-9A-HJKMNP-TV-Z]{26}$/),
+    action: z.enum(['defer', 'auto_contain', 'escalate_mdr']),
+    notes: z.string().optional(),
+  })
+  .passthrough();
+const OverflowRouteId = z.string();
+const OverflowRoute = z
+  .object({
+    id: z.string().regex(/^ovf_[0-9A-HJKMNP-TV-Z]{26}$/),
+    alertId: z.string().regex(/^alt_[0-9A-HJKMNP-TV-Z]{26}$/),
+    action: z.enum(['defer', 'auto_contain', 'escalate_mdr']),
+    decidedBy: z.string().optional(),
+    decidedAt: z.string().datetime({ offset: true }).optional(),
+    notes: z.string().optional(),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .passthrough();
+const OverflowRouteResponse = z
+  .object({
+    data: z
+      .object({
+        id: z.string().regex(/^ovf_[0-9A-HJKMNP-TV-Z]{26}$/),
+        alertId: z.string().regex(/^alt_[0-9A-HJKMNP-TV-Z]{26}$/),
+        action: z.enum(['defer', 'auto_contain', 'escalate_mdr']),
+        decidedBy: z.string().optional(),
+        decidedAt: z.string().datetime({ offset: true }).optional(),
+        notes: z.string().optional(),
+        createdAt: z.string().datetime({ offset: true }),
+        updatedAt: z.string().datetime({ offset: true }),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const ContainmentActionType = z.enum([
+  'isolate_host',
+  'disable_account',
+  'block_indicator',
+  'quarantine_mail',
+]);
+const ContainmentActionCreate = z
+  .object({
+    alertId: z.string().regex(/^alt_[0-9A-HJKMNP-TV-Z]{26}$/),
+    actionType: z.enum([
+      'isolate_host',
+      'disable_account',
+      'block_indicator',
+      'quarantine_mail',
+    ]),
+    accountableRoleId: z.string(),
+    policyVersion: z.string().optional(),
+  })
+  .passthrough();
+const ActionId = z.string();
+const ContainmentStatus = z.enum([
+  'pending',
+  'executed',
+  'overridden',
+  'failed',
+]);
+const ContainmentAction = z
+  .object({
+    id: z.string().regex(/^act_[0-9A-HJKMNP-TV-Z]{26}$/),
+    alertId: z.string().regex(/^alt_[0-9A-HJKMNP-TV-Z]{26}$/),
+    actionType: z.enum([
+      'isolate_host',
+      'disable_account',
+      'block_indicator',
+      'quarantine_mail',
+    ]),
+    status: z.enum(['pending', 'executed', 'overridden', 'failed']),
+    policyVersion: z.string().optional(),
+    accountableRoleId: z.string().optional(),
+    overrideRationale: z.string().optional(),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .passthrough();
+const ContainmentActionResponse = z
+  .object({
+    data: z
+      .object({
+        id: z.string().regex(/^act_[0-9A-HJKMNP-TV-Z]{26}$/),
+        alertId: z.string().regex(/^alt_[0-9A-HJKMNP-TV-Z]{26}$/),
+        actionType: z.enum([
+          'isolate_host',
+          'disable_account',
+          'block_indicator',
+          'quarantine_mail',
+        ]),
+        status: z.enum(['pending', 'executed', 'overridden', 'failed']),
+        policyVersion: z.string().optional(),
+        accountableRoleId: z.string().optional(),
+        overrideRationale: z.string().optional(),
+        createdAt: z.string().datetime({ offset: true }),
+        updatedAt: z.string().datetime({ offset: true }),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const ContainmentOverrideRequest = z
+  .object({ rationale: z.string() })
+  .passthrough();
+
+export const schemas: any = {
+  openTriageShift_Body,
+  admitAlertToQueue_Body,
+  routeOverflow_Body,
+  executeContainmentAction_Body,
+  Problem,
+  ShiftId,
+  ShiftStatus,
+  TriageShift,
+  TriageShiftListData,
+  ResponseMeta,
+  TriageShiftListResponse,
+  TriageShiftCreate,
+  TriageShiftResponse,
+  QueuedAlertId,
+  AlertId,
+  QueuedAlert,
+  QueuedAlertListData,
+  QueuedAlertListResponse,
+  AdmitAlertRequest,
+  QueuedAlertResponse,
+  OverflowAction,
+  OverflowRouteCreate,
+  OverflowRouteId,
+  OverflowRoute,
+  OverflowRouteResponse,
+  ContainmentActionType,
+  ContainmentActionCreate,
+  ActionId,
+  ContainmentStatus,
+  ContainmentAction,
+  ContainmentActionResponse,
+  ContainmentOverrideRequest,
+};
+
+const endpoints = makeApi([
+  {
+    method: 'post',
+    path: '/v1/containment-actions',
+    alias: 'executeContainmentAction',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: executeContainmentAction_Body,
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string().regex(/^act_[0-9A-HJKMNP-TV-Z]{26}$/),
+            alertId: z.string().regex(/^alt_[0-9A-HJKMNP-TV-Z]{26}$/),
+            actionType: z.enum([
+              'isolate_host',
+              'disable_account',
+              'block_indicator',
+              'quarantine_mail',
+            ]),
+            status: z.enum(['pending', 'executed', 'overridden', 'failed']),
+            policyVersion: z.string().optional(),
+            accountableRoleId: z.string().optional(),
+            overrideRationale: z.string().optional(),
+            createdAt: z.string().datetime({ offset: true }),
+            updatedAt: z.string().datetime({ offset: true }),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/containment-actions/:actionId/override',
+    alias: 'overrideContainmentAction',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: z.object({ rationale: z.string() }).passthrough(),
+      },
+      {
+        name: 'actionId',
+        type: 'Path',
+        schema: z.string().regex(/^act_[0-9A-HJKMNP-TV-Z]{26}$/),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string().regex(/^act_[0-9A-HJKMNP-TV-Z]{26}$/),
+            alertId: z.string().regex(/^alt_[0-9A-HJKMNP-TV-Z]{26}$/),
+            actionType: z.enum([
+              'isolate_host',
+              'disable_account',
+              'block_indicator',
+              'quarantine_mail',
+            ]),
+            status: z.enum(['pending', 'executed', 'overridden', 'failed']),
+            policyVersion: z.string().optional(),
+            accountableRoleId: z.string().optional(),
+            overrideRationale: z.string().optional(),
+            createdAt: z.string().datetime({ offset: true }),
+            updatedAt: z.string().datetime({ offset: true }),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/triage/overflow',
+    alias: 'routeOverflow',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: routeOverflow_Body,
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string().regex(/^ovf_[0-9A-HJKMNP-TV-Z]{26}$/),
+            alertId: z.string().regex(/^alt_[0-9A-HJKMNP-TV-Z]{26}$/),
+            action: z.enum(['defer', 'auto_contain', 'escalate_mdr']),
+            decidedBy: z.string().optional(),
+            decidedAt: z.string().datetime({ offset: true }).optional(),
+            notes: z.string().optional(),
+            createdAt: z.string().datetime({ offset: true }),
+            updatedAt: z.string().datetime({ offset: true }),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v1/triage/queue',
+    alias: 'listTriageQueue',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'cursor',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().gte(1).lte(200).optional().default(50),
+      },
+      {
+        name: 'shiftId',
+        type: 'Query',
+        schema: z
+          .string()
+          .regex(/^sft_[0-9A-HJKMNP-TV-Z]{26}$/)
+          .optional(),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  id: z.string().regex(/^que_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  alertId: z.string().regex(/^alt_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  shiftId: z.string().regex(/^sft_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  position: z.number().int(),
+                  worthScore: z.number().optional(),
+                  admittedAt: z.string().datetime({ offset: true }).optional(),
+                  createdAt: z.string().datetime({ offset: true }),
+                  updatedAt: z.string().datetime({ offset: true }),
+                })
+                .passthrough()
+            ),
+            nextCursor: z.string().optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/triage/queue/admit',
+    alias: 'admitAlertToQueue',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: admitAlertToQueue_Body,
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string().regex(/^que_[0-9A-HJKMNP-TV-Z]{26}$/),
+            alertId: z.string().regex(/^alt_[0-9A-HJKMNP-TV-Z]{26}$/),
+            shiftId: z.string().regex(/^sft_[0-9A-HJKMNP-TV-Z]{26}$/),
+            position: z.number().int(),
+            worthScore: z.number().optional(),
+            admittedAt: z.string().datetime({ offset: true }).optional(),
+            createdAt: z.string().datetime({ offset: true }),
+            updatedAt: z.string().datetime({ offset: true }),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Idempotency key reuse with different body, or state conflict`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v1/triage/shifts',
+    alias: 'listTriageShifts',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'cursor',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().gte(1).lte(200).optional().default(50),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  id: z.string().regex(/^sft_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  accountableLeadId: z.string(),
+                  capacitySlots: z.number().int(),
+                  queuedCount: z.number().int().optional(),
+                  status: z.enum(['open', 'closed']),
+                  startsAt: z.string().datetime({ offset: true }).optional(),
+                  endsAt: z.string().datetime({ offset: true }).optional(),
+                  createdAt: z.string().datetime({ offset: true }),
+                  updatedAt: z.string().datetime({ offset: true }),
+                })
+                .passthrough()
+            ),
+            nextCursor: z.string().optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/triage/shifts',
+    alias: 'openTriageShift',
+    description: `Opens a shift only when an accountable SOC lead is named. Capacity caps the human queue for the shift.
+`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: openTriageShift_Body,
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string().regex(/^sft_[0-9A-HJKMNP-TV-Z]{26}$/),
+            accountableLeadId: z.string(),
+            capacitySlots: z.number().int(),
+            queuedCount: z.number().int().optional(),
+            status: z.enum(['open', 'closed']),
+            startsAt: z.string().datetime({ offset: true }).optional(),
+            endsAt: z.string().datetime({ offset: true }).optional(),
+            createdAt: z.string().datetime({ offset: true }),
+            updatedAt: z.string().datetime({ offset: true }),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 422,
+        description: `Semantically invalid request (e.g. PACK_EMPTY)`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+]);
+
+export const api: any = new Zodios(
+  'https://api.ddd-codegen-starter.local/v1',
+  endpoints
+);
+
+export function createApiClient(baseUrl: string, options?: ZodiosOptions): any {
+  return new Zodios(baseUrl, endpoints, options);
+}

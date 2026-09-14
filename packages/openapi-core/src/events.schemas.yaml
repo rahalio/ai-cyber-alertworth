@@ -1,0 +1,99 @@
+openapi: 3.1.0
+info:
+  title: Events domain schemas
+  version: 0.1.0
+  description: Ingested security events from SIEM, EDR, identity, and intel.
+paths: {}
+components:
+  schemas:
+    SecurityEventId:
+      type: string
+      pattern: '^evt_[0-9A-HJKMNP-TV-Z]{26}$'
+      description: Prefixed security event id.
+
+    EventSource:
+      type: string
+      enum: [siem, edr, identity, threat_intel]
+
+    AssetCriticality:
+      type: string
+      enum: [low, medium, high, critical]
+
+    SecurityEvent:
+      x-dynamodb:
+        domain: EVENTS
+        entityType: SECURITY_EVENT
+        entityTypePk: SECURITY_EVENTS
+        pkPattern: entity
+        pkPatternTemplate: "SECURITY_EVENT#${id}"
+        skPatternTemplate: "METADATA"
+        tableType: core
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+      type: object
+      required: [id, source, receivedAt, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/SecurityEventId'
+        source:
+          $ref: '#/components/schemas/EventSource'
+        externalId:
+          type: string
+        receivedAt:
+          type: string
+          format: date-time
+        attackType:
+          type: string
+        assetCriticality:
+          $ref: '#/components/schemas/AssetCriticality'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SecurityEventIngest:
+      type: object
+      required: [source, externalId]
+      properties:
+        source:
+          $ref: '#/components/schemas/EventSource'
+        externalId:
+          type: string
+        attackType:
+          type: string
+        assetCriticality:
+          $ref: '#/components/schemas/AssetCriticality'
+        rawRef:
+          type: string
+          description: Pointer into source SIEM; not raw payload
+
+    SecurityEventListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SecurityEvent'
+        nextCursor:
+          type: string
+
+    SecurityEventResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/SecurityEvent'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    SecurityEventListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/SecurityEventListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

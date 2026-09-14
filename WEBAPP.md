@@ -57,16 +57,17 @@ flowchart LR
 
 ### Cross-links to OpenAPI resources
 
-| Nav area | OpenAPI tags / resources |
-|----------|---------------------------|
-| Ingested events | Events |
-| Economic scores | Scoring |
-| Queue, overflow, dismissals | Triage |
-| Cases / dispositions | Investigations |
-| Insider / anomaly baselines | Baselines |
-| Continuous control tests | Controls |
-| KRIs | Indicators |
-| Residual risk / packs / time-returned | Reporting |
+| Nav area | OpenAPI domain file |
+|----------|---------------------|
+| Ingested events | [`events.yaml`](packages/openapi-core/src/events.yaml) |
+| Economic scores | [`scoring.yaml`](packages/openapi-core/src/scoring.yaml) |
+| Queue, overflow, containment | [`triage.yaml`](packages/openapi-core/src/triage.yaml) |
+| Cases / dispositions | [`investigations.yaml`](packages/openapi-core/src/investigations.yaml) |
+| Insider / anomaly baselines | [`baselines.yaml`](packages/openapi-core/src/baselines.yaml) |
+| Continuous control tests | [`controls.yaml`](packages/openapi-core/src/controls.yaml) |
+| KRIs | [`indicators.yaml`](packages/openapi-core/src/indicators.yaml) |
+| Residual risk / packs | [`reporting.yaml`](packages/openapi-core/src/reporting.yaml) |
+| Console app | [`platform/webapp`](platform/webapp) |
 
 ## Screen inventory
 

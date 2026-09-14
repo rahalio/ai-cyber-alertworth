@@ -1,0 +1,214 @@
+openapi: 3.1.0
+info:
+  title: Reporting domain schemas
+  version: 0.1.0
+  description: Residual risk snapshots, cyber risk appetite, and committee packs.
+paths: {}
+components:
+  schemas:
+    SnapshotId:
+      type: string
+      pattern: '^rrs_[0-9A-HJKMNP-TV-Z]{26}$'
+      description: Prefixed residual risk snapshot id.
+
+    AppetiteId:
+      type: string
+      pattern: '^cra_[0-9A-HJKMNP-TV-Z]{26}$'
+      description: Prefixed cyber risk appetite id.
+
+    PackId:
+      type: string
+      pattern: '^pck_[0-9A-HJKMNP-TV-Z]{26}$'
+      description: Prefixed committee pack id.
+
+    ResidualLevel:
+      type: string
+      enum: [low, medium, high, critical]
+
+    AgainstAppetite:
+      type: string
+      enum: [within, near, breached]
+
+    SnapshotAudience:
+      type: string
+      enum: [operations, risk_committee, board]
+
+    Committee:
+      type: string
+      enum: [audit_risk, board, cyber_steering]
+
+    ResidualRiskSnapshot:
+      x-dynamodb:
+        domain: REPORTING
+        entityType: RESIDUAL_RISK_SNAPSHOT
+        entityTypePk: RESIDUAL_RISK_SNAPSHOTS
+        pkPattern: entity
+        pkPatternTemplate: "RESIDUAL_RISK_SNAPSHOT#${id}"
+        skPatternTemplate: "METADATA"
+        tableType: core
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+      type: object
+      required: [id, residualLevel, againstAppetite, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/SnapshotId'
+        asOf:
+          type: string
+          format: date-time
+        residualLevel:
+          $ref: '#/components/schemas/ResidualLevel'
+        againstAppetite:
+          $ref: '#/components/schemas/AgainstAppetite'
+        staleKriCount:
+          type: integer
+        openHighWorthAlerts:
+          type: integer
+        audience:
+          $ref: '#/components/schemas/SnapshotAudience'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ResidualRiskSnapshotCreate:
+      type: object
+      properties:
+        asOf:
+          type: string
+          format: date-time
+        audience:
+          $ref: '#/components/schemas/SnapshotAudience'
+
+    CyberRiskAppetite:
+      x-dynamodb:
+        domain: REPORTING
+        entityType: CYBER_RISK_APPETITE
+        entityTypePk: CYBER_RISK_APPETITES
+        pkPattern: entity
+        pkPatternTemplate: "CYBER_RISK_APPETITE#${id}"
+        skPatternTemplate: "METADATA"
+        tableType: core
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+      type: object
+      required: [id, version, narrative, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/AppetiteId'
+        version:
+          type: string
+        narrative:
+          type: string
+        thresholds:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              limit:
+                type: number
+                format: float
+        approvedBy:
+          type: string
+        approvedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CommitteePack:
+      x-dynamodb:
+        domain: REPORTING
+        entityType: COMMITTEE_PACK
+        entityTypePk: COMMITTEE_PACKS
+        pkPattern: entity
+        pkPatternTemplate: "COMMITTEE_PACK#${id}"
+        skPatternTemplate: "METADATA"
+        tableType: core
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+      type: object
+      required: [id, snapshotId, committee, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/PackId'
+        snapshotId:
+          $ref: '#/components/schemas/SnapshotId'
+        committee:
+          type: string
+        packUri:
+          type: string
+          format: uri
+        assembledAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AssembleCommitteePackRequest:
+      type: object
+      required: [snapshotId]
+      properties:
+        snapshotId:
+          $ref: '#/components/schemas/SnapshotId'
+        committee:
+          $ref: '#/components/schemas/Committee'
+
+    ResidualRiskSnapshotListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResidualRiskSnapshot'
+        nextCursor:
+          type: string
+
+    ResidualRiskSnapshotResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ResidualRiskSnapshot'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    ResidualRiskSnapshotListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ResidualRiskSnapshotListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    CyberRiskAppetiteResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/CyberRiskAppetite'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    CommitteePackResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/CommitteePack'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

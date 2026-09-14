@@ -1,0 +1,112 @@
+openapi: 3.1.0
+info:
+  title: Alertworth Controls API
+  version: 0.1.0
+  description: |
+    Continuous control testing schedules and results.
+  x-domain: ctl
+  x-product: alertworth
+servers:
+  - url: https://api.alertworth.local
+security:
+  - apiKey: []
+tags:
+  - name: Controls
+    description: Continuous control testing
+paths:
+  /v1/control-tests:
+    get:
+      operationId: listControlTests
+      tags: [Controls]
+      summary: List control tests
+      x-repository: ControlTest
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: status
+          in: query
+          schema:
+            $ref: ./controls.schemas.yaml#/components/schemas/ControlTestStatus
+      responses:
+        '200':
+          description: Control tests page
+          content:
+            application/json:
+              schema:
+                $ref: ./controls.schemas.yaml#/components/schemas/ControlTestListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: scheduleControlTest
+      tags: [Controls]
+      summary: Schedule a control test
+      x-repository: ControlTest
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./controls.schemas.yaml#/components/schemas/ControlTestCreate
+      responses:
+        '201':
+          description: Control test scheduled
+          content:
+            application/json:
+              schema:
+                $ref: ./controls.schemas.yaml#/components/schemas/ControlTestResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/control-tests/{testId}/results:
+    parameters:
+      - name: testId
+        in: path
+        required: true
+        schema:
+          $ref: ./controls.schemas.yaml#/components/schemas/TestId
+    post:
+      operationId: recordControlTestResult
+      tags: [Controls]
+      summary: Record control test result
+      x-repository: ControlTest
+      security:
+        - apiKey: []
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./controls.schemas.yaml#/components/schemas/ControlTestResult
+      responses:
+        '201':
+          description: Result recorded into residual risk
+          content:
+            application/json:
+              schema:
+                $ref: ./controls.schemas.yaml#/components/schemas/ControlTestResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth

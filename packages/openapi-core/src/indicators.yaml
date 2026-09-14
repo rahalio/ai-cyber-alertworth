@@ -1,0 +1,106 @@
+openapi: 3.1.0
+info:
+  title: Alertworth Indicators API
+  version: 0.1.0
+  description: |
+    Key risk indicators with evidence freshness gates.
+  x-domain: ind
+  x-product: alertworth
+servers:
+  - url: https://api.alertworth.local
+security:
+  - apiKey: []
+tags:
+  - name: Indicators
+    description: KRIs with evidence freshness gates
+paths:
+  /v1/kris:
+    get:
+      operationId: listKeyRiskIndicators
+      tags: [Indicators]
+      summary: List key risk indicators
+      x-repository: KeyRiskIndicator
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: KRIs with freshness state
+          content:
+            application/json:
+              schema:
+                $ref: ./indicators.schemas.yaml#/components/schemas/KeyRiskIndicatorListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: defineKeyRiskIndicator
+      tags: [Indicators]
+      summary: Define a key risk indicator
+      x-repository: KeyRiskIndicator
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./indicators.schemas.yaml#/components/schemas/KeyRiskIndicatorCreate
+      responses:
+        '201':
+          description: KRI defined
+          content:
+            application/json:
+              schema:
+                $ref: ./indicators.schemas.yaml#/components/schemas/KeyRiskIndicatorResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/kris/{kriId}/refresh:
+    parameters:
+      - name: kriId
+        in: path
+        required: true
+        schema:
+          $ref: ./indicators.schemas.yaml#/components/schemas/KriId
+    post:
+      operationId: refreshKeyRiskIndicator
+      tags: [Indicators]
+      summary: Refresh KRI evidence
+      x-repository: none
+      security:
+        - apiKey: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./indicators.schemas.yaml#/components/schemas/EvidenceRecord
+      responses:
+        '200':
+          description: KRI refreshed or degraded for stale coverage
+          content:
+            application/json:
+              schema:
+                $ref: ./indicators.schemas.yaml#/components/schemas/KeyRiskIndicatorResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth

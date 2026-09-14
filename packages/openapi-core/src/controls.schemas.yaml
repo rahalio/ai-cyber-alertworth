@@ -1,0 +1,111 @@
+openapi: 3.1.0
+info:
+  title: Controls domain schemas
+  version: 0.1.0
+  description: Continuous control testing.
+paths: {}
+components:
+  schemas:
+    TestId:
+      type: string
+      pattern: '^ctl_[0-9A-HJKMNP-TV-Z]{26}$'
+      description: Prefixed control test id.
+
+    ControlSchedule:
+      type: string
+      enum: [continuous, daily, weekly, change_triggered]
+
+    ControlTestStatus:
+      type: string
+      enum: [scheduled, running, passed, failed]
+
+    ControlOutcome:
+      type: string
+      enum: [passed, failed]
+
+    ControlTest:
+      x-dynamodb:
+        domain: CONTROLS
+        entityType: CONTROL_TEST
+        entityTypePk: CONTROL_TESTS
+        pkPattern: entity
+        pkPatternTemplate: "CONTROL_TEST#${id}"
+        skPatternTemplate: "METADATA"
+        tableType: core
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+      type: object
+      required: [id, controlId, status, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/TestId'
+        controlId:
+          type: string
+        schedule:
+          $ref: '#/components/schemas/ControlSchedule'
+        status:
+          $ref: '#/components/schemas/ControlTestStatus'
+        lastResultAt:
+          type: string
+          format: date-time
+        lastOutcome:
+          $ref: '#/components/schemas/ControlOutcome'
+        ownerId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ControlTestCreate:
+      type: object
+      required: [controlId, schedule]
+      properties:
+        controlId:
+          type: string
+        schedule:
+          $ref: '#/components/schemas/ControlSchedule'
+        ownerId:
+          type: string
+
+    ControlTestResult:
+      type: object
+      required: [outcome]
+      properties:
+        outcome:
+          $ref: '#/components/schemas/ControlOutcome'
+        evidenceRef:
+          type: string
+        detail:
+          type: string
+
+    ControlTestListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ControlTest'
+        nextCursor:
+          type: string
+
+    ControlTestResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ControlTest'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    ControlTestListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ControlTestListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

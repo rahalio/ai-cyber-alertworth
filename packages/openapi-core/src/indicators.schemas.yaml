@@ -1,0 +1,122 @@
+openapi: 3.1.0
+info:
+  title: Indicators domain schemas
+  version: 0.1.0
+  description: KRIs with evidence freshness gates.
+paths: {}
+components:
+  schemas:
+    KriId:
+      type: string
+      pattern: '^kri_[0-9A-HJKMNP-TV-Z]{26}$'
+      description: Prefixed key risk indicator id.
+
+    FreshnessState:
+      type: string
+      enum: [fresh, degrading, stale]
+
+    KeyRiskIndicator:
+      x-dynamodb:
+        domain: INDICATORS
+        entityType: KEY_RISK_INDICATOR
+        entityTypePk: KEY_RISK_INDICATORS
+        pkPattern: entity
+        pkPatternTemplate: "KEY_RISK_INDICATOR#${id}"
+        skPatternTemplate: "METADATA"
+        tableType: core
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+      type: object
+      required: [id, name, freshnessState, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/KriId'
+        name:
+          type: string
+        threshold:
+          type: number
+          format: float
+        currentValue:
+          type: number
+          format: float
+        freshnessState:
+          $ref: '#/components/schemas/FreshnessState'
+        evidenceCoverage:
+          type: number
+          format: float
+        maxEvidenceAgeHours:
+          type: integer
+        minCoverage:
+          type: number
+          format: float
+        ownerId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    KeyRiskIndicatorCreate:
+      type: object
+      required: [name, threshold, maxEvidenceAgeHours, ownerId]
+      properties:
+        name:
+          type: string
+        threshold:
+          type: number
+          format: float
+        maxEvidenceAgeHours:
+          type: integer
+        minCoverage:
+          type: number
+          format: float
+        ownerId:
+          type: string
+
+    EvidenceRecord:
+      type: object
+      required: [collectedAt, coverage]
+      properties:
+        collectedAt:
+          type: string
+          format: date-time
+        coverage:
+          type: number
+          format: float
+        sourceRefs:
+          type: array
+          items:
+            type: string
+        evidenceHash:
+          type: string
+
+    KeyRiskIndicatorListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/KeyRiskIndicator'
+        nextCursor:
+          type: string
+
+    KeyRiskIndicatorResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/KeyRiskIndicator'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    KeyRiskIndicatorListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/KeyRiskIndicatorListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

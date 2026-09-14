@@ -1,0 +1,152 @@
+openapi: 3.1.0
+info:
+  title: Investigations domain schemas
+  version: 0.1.0
+  description: Cases, dispositions, and learning feedback.
+paths: {}
+components:
+  schemas:
+    CaseId:
+      type: string
+      pattern: '^cse_[0-9A-HJKMNP-TV-Z]{26}$'
+      description: Prefixed investigation case id.
+
+    AlertId:
+      type: string
+      pattern: '^alt_[0-9A-HJKMNP-TV-Z]{26}$'
+      description: Prefixed alert id (scoring domain).
+
+    CaseStatus:
+      type: string
+      enum: [open, investigating, closed]
+
+    Disposition:
+      type: string
+      enum: [true_positive, false_positive, benign, inconclusive]
+
+    InvestigationCase:
+      x-dynamodb:
+        domain: INVESTIGATIONS
+        entityType: INVESTIGATION_CASE
+        entityTypePk: INVESTIGATION_CASES
+        pkPattern: entity
+        pkPatternTemplate: "INVESTIGATION_CASE#${id}"
+        skPatternTemplate: "METADATA"
+        tableType: core
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+      type: object
+      required: [id, alertId, status, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/CaseId'
+        alertId:
+          $ref: '#/components/schemas/AlertId'
+        status:
+          $ref: '#/components/schemas/CaseStatus'
+        analystId:
+          type: string
+        disposition:
+          $ref: '#/components/schemas/Disposition'
+        openedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    InvestigationCaseCreate:
+      type: object
+      required: [alertId]
+      properties:
+        alertId:
+          $ref: '#/components/schemas/AlertId'
+        analystId:
+          type: string
+
+    DispositionCreate:
+      type: object
+      required: [disposition]
+      properties:
+        disposition:
+          $ref: '#/components/schemas/Disposition'
+        notes:
+          type: string
+
+    ChallengeDismissalRequest:
+      type: object
+      required: [alertId, rationale]
+      properties:
+        alertId:
+          $ref: '#/components/schemas/AlertId'
+        rationale:
+          type: string
+
+    # Minimal QueuedAlert for challengeAutoDismissal response (cross-domain).
+    QueuedAlertId:
+      type: string
+      pattern: '^que_[0-9A-HJKMNP-TV-Z]{26}$'
+
+    ShiftId:
+      type: string
+      pattern: '^sft_[0-9A-HJKMNP-TV-Z]{26}$'
+
+    QueuedAlert:
+      type: object
+      required: [id, alertId, shiftId, position]
+      properties:
+        id:
+          $ref: '#/components/schemas/QueuedAlertId'
+        alertId:
+          $ref: '#/components/schemas/AlertId'
+        shiftId:
+          $ref: '#/components/schemas/ShiftId'
+        position:
+          type: integer
+        worthScore:
+          type: number
+          format: float
+        admittedAt:
+          type: string
+          format: date-time
+
+    InvestigationCaseListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvestigationCase'
+        nextCursor:
+          type: string
+
+    InvestigationCaseResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/InvestigationCase'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    InvestigationCaseListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/InvestigationCaseListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    QueuedAlertResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/QueuedAlert'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

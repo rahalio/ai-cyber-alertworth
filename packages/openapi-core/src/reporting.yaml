@@ -1,0 +1,143 @@
+openapi: 3.1.0
+info:
+  title: Alertworth Reporting API
+  version: 0.1.0
+  description: |
+    Residual risk snapshots, cyber risk appetite, and committee packs.
+  x-domain: rpt
+  x-product: alertworth
+servers:
+  - url: https://api.alertworth.local
+security:
+  - apiKey: []
+tags:
+  - name: Reporting
+    description: Residual risk snapshots and committee packs
+paths:
+  /v1/residual-risk/snapshots:
+    get:
+      operationId: listResidualRiskSnapshots
+      tags: [Reporting]
+      summary: List residual risk snapshots
+      x-repository: ResidualRiskSnapshot
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Residual risk snapshots against appetite
+          content:
+            application/json:
+              schema:
+                $ref: ./reporting.schemas.yaml#/components/schemas/ResidualRiskSnapshotListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: publishResidualRiskSnapshot
+      tags: [Reporting]
+      summary: Publish residual risk snapshot
+      x-repository: ResidualRiskSnapshot
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./reporting.schemas.yaml#/components/schemas/ResidualRiskSnapshotCreate
+      responses:
+        '201':
+          description: Snapshot published
+          content:
+            application/json:
+              schema:
+                $ref: ./reporting.schemas.yaml#/components/schemas/ResidualRiskSnapshotResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/cyber-risk-appetite:
+    get:
+      operationId: getCyberRiskAppetite
+      tags: [Reporting]
+      summary: Get cyber risk appetite
+      x-repository: CyberRiskAppetite
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Stated cyber risk appetite
+          content:
+            application/json:
+              schema:
+                $ref: ./reporting.schemas.yaml#/components/schemas/CyberRiskAppetiteResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    put:
+      operationId: updateCyberRiskAppetite
+      tags: [Reporting]
+      summary: Update cyber risk appetite
+      x-repository: CyberRiskAppetite
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./reporting.schemas.yaml#/components/schemas/CyberRiskAppetite
+      responses:
+        '200':
+          description: Appetite updated
+          content:
+            application/json:
+              schema:
+                $ref: ./reporting.schemas.yaml#/components/schemas/CyberRiskAppetiteResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/committee-packs:
+    post:
+      operationId: assembleCommitteePack
+      tags: [Reporting]
+      summary: Assemble committee pack
+      x-repository: none
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./reporting.schemas.yaml#/components/schemas/AssembleCommitteePackRequest
+      responses:
+        '201':
+          description: Committee pack assembled from residual risk evidence
+          content:
+            application/json:
+              schema:
+                $ref: ./reporting.schemas.yaml#/components/schemas/CommitteePackResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth

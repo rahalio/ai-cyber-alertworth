@@ -1,0 +1,234 @@
+{
+  "info": {
+    "name": "Alertworth Reporting API",
+    "description": "Residual risk snapshots, cyber risk appetite, and committee packs.\n",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://api.alertworth.local"
+    },
+    {
+      "key": "orgId",
+      "value": "test-org"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Reporting",
+      "item": [
+        {
+          "name": "listResidualRiskSnapshots",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/residual-risk/snapshots?cursor={{cursor}}&limit={{limit}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "residual-risk",
+                "snapshots"
+              ],
+              "query": [
+                {
+                  "key": "cursor",
+                  "value": "{{cursor}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "{{limit}}"
+                }
+              ]
+            },
+            "description": "List residual risk snapshots"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('listResidualRiskSnapshots status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response has envelope', function () { var j = pm.response.json(); pm.expect(j).to.have.property('data'); });",
+                  "var j = pm.response.json(); var items = (j.data && j.data.items) || []; if (items.length) { var it = items[0]; var id = it.residualRiskSnapshotId || it.id; if (id) { pm.collectionVariables.set('residualRiskSnapshotId', id); pm.environment.set('residualRiskSnapshotId', id); pm.collectionVariables.set('id', id); pm.environment.set('id', id); } }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "publishResidualRiskSnapshot",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/residual-risk/snapshots",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "residual-risk",
+                "snapshots"
+              ],
+              "query": []
+            },
+            "description": "Publish residual risk snapshot",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asOf\": \"\",\n  \"audience\": \"operations\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('publishResidualRiskSnapshot status 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('response has envelope', function () { var j = pm.response.json(); pm.expect(j).to.have.property('data'); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "getCyberRiskAppetite",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/cyber-risk-appetite",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "cyber-risk-appetite"
+              ],
+              "query": []
+            },
+            "description": "Get cyber risk appetite"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('getCyberRiskAppetite status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response has envelope', function () { var j = pm.response.json(); pm.expect(j).to.have.property('data'); });",
+                  "var j = pm.response.json(); if (j.data) { var id = j.data.cyberRiskAppetiteId || j.data.id; if (id) { pm.collectionVariables.set('cyberRiskAppetiteId', id); pm.environment.set('cyberRiskAppetiteId', id); pm.collectionVariables.set('id', id); pm.environment.set('id', id); } }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "updateCyberRiskAppetite",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/cyber-risk-appetite",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "cyber-risk-appetite"
+              ],
+              "query": []
+            },
+            "description": "Update cyber risk appetite",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"\",\n  \"version\": \"\",\n  \"narrative\": \"\",\n  \"thresholds\": null,\n  \"approvedBy\": \"\",\n  \"approvedAt\": \"\",\n  \"createdAt\": \"\",\n  \"updatedAt\": \"\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('updateCyberRiskAppetite status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response has envelope', function () { var j = pm.response.json(); pm.expect(j).to.have.property('data'); });",
+                  "var j = pm.response.json(); var _id = j.data && (j.data.cyberRiskAppetiteId || j.data.id || j.data.jobId || j.data.pipelineConfigId || j.data.teamId || j.data.memberId || j.data.opportunityId); if (_id) { pm.collectionVariables.set('cyberRiskAppetiteId', _id); pm.environment.set('cyberRiskAppetiteId', _id); pm.collectionVariables.set('id', _id); pm.environment.set('id', _id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "assembleCommitteePack",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/committee-packs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "committee-packs"
+              ],
+              "query": []
+            },
+            "description": "Assemble committee pack",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"snapshotId\": \"newman_snapshotId\",\n  \"committee\": \"audit_risk\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('assembleCommitteePack status 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('response has envelope', function () { var j = pm.response.json(); pm.expect(j).to.have.property('data'); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

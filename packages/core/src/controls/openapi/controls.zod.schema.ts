@@ -1,0 +1,412 @@
+import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core';
+import { z } from 'zod';
+
+const scheduleControlTest_Body = z
+  .object({
+    controlId: z.string(),
+    schedule: z.enum(['continuous', 'daily', 'weekly', 'change_triggered']),
+    ownerId: z.string().optional(),
+  })
+  .passthrough();
+const recordControlTestResult_Body = z
+  .object({
+    outcome: z.enum(['passed', 'failed']),
+    evidenceRef: z.string().optional(),
+    detail: z.string().optional(),
+  })
+  .passthrough();
+const ControlTestStatus = z.enum(['scheduled', 'running', 'passed', 'failed']);
+const Problem = z
+  .object({
+    type: z.string().url(),
+    title: z.string(),
+    status: z.number().int(),
+    detail: z.string(),
+    instance: z.string().url(),
+    code: z.string(),
+  })
+  .partial()
+  .passthrough();
+const TestId = z.string();
+const ControlSchedule = z.enum([
+  'continuous',
+  'daily',
+  'weekly',
+  'change_triggered',
+]);
+const ControlOutcome = z.enum(['passed', 'failed']);
+const ControlTest = z
+  .object({
+    id: z.string().regex(/^ctl_[0-9A-HJKMNP-TV-Z]{26}$/),
+    controlId: z.string(),
+    schedule: z
+      .enum(['continuous', 'daily', 'weekly', 'change_triggered'])
+      .optional(),
+    status: z.enum(['scheduled', 'running', 'passed', 'failed']),
+    lastResultAt: z.string().datetime({ offset: true }).optional(),
+    lastOutcome: z.enum(['passed', 'failed']).optional(),
+    ownerId: z.string().optional(),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .passthrough();
+const ControlTestListData = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          id: z.string().regex(/^ctl_[0-9A-HJKMNP-TV-Z]{26}$/),
+          controlId: z.string(),
+          schedule: z
+            .enum(['continuous', 'daily', 'weekly', 'change_triggered'])
+            .optional(),
+          status: z.enum(['scheduled', 'running', 'passed', 'failed']),
+          lastResultAt: z.string().datetime({ offset: true }).optional(),
+          lastOutcome: z.enum(['passed', 'failed']).optional(),
+          ownerId: z.string().optional(),
+          createdAt: z.string().datetime({ offset: true }),
+          updatedAt: z.string().datetime({ offset: true }),
+        })
+        .passthrough()
+    ),
+    nextCursor: z.string().optional(),
+  })
+  .passthrough();
+const ResponseMeta = z
+  .object({
+    requestId: z.string().uuid(),
+    correlationId: z.string(),
+    generatedAt: z.string().datetime({ offset: true }),
+  })
+  .partial()
+  .passthrough();
+const ControlTestListResponse = z
+  .object({
+    data: z
+      .object({
+        items: z.array(
+          z
+            .object({
+              id: z.string().regex(/^ctl_[0-9A-HJKMNP-TV-Z]{26}$/),
+              controlId: z.string(),
+              schedule: z
+                .enum(['continuous', 'daily', 'weekly', 'change_triggered'])
+                .optional(),
+              status: z.enum(['scheduled', 'running', 'passed', 'failed']),
+              lastResultAt: z.string().datetime({ offset: true }).optional(),
+              lastOutcome: z.enum(['passed', 'failed']).optional(),
+              ownerId: z.string().optional(),
+              createdAt: z.string().datetime({ offset: true }),
+              updatedAt: z.string().datetime({ offset: true }),
+            })
+            .passthrough()
+        ),
+        nextCursor: z.string().optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const ControlTestCreate = z
+  .object({
+    controlId: z.string(),
+    schedule: z.enum(['continuous', 'daily', 'weekly', 'change_triggered']),
+    ownerId: z.string().optional(),
+  })
+  .passthrough();
+const ControlTestResponse = z
+  .object({
+    data: z
+      .object({
+        id: z.string().regex(/^ctl_[0-9A-HJKMNP-TV-Z]{26}$/),
+        controlId: z.string(),
+        schedule: z
+          .enum(['continuous', 'daily', 'weekly', 'change_triggered'])
+          .optional(),
+        status: z.enum(['scheduled', 'running', 'passed', 'failed']),
+        lastResultAt: z.string().datetime({ offset: true }).optional(),
+        lastOutcome: z.enum(['passed', 'failed']).optional(),
+        ownerId: z.string().optional(),
+        createdAt: z.string().datetime({ offset: true }),
+        updatedAt: z.string().datetime({ offset: true }),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const ControlTestResult = z
+  .object({
+    outcome: z.enum(['passed', 'failed']),
+    evidenceRef: z.string().optional(),
+    detail: z.string().optional(),
+  })
+  .passthrough();
+
+export const schemas: any = {
+  scheduleControlTest_Body,
+  recordControlTestResult_Body,
+  ControlTestStatus,
+  Problem,
+  TestId,
+  ControlSchedule,
+  ControlOutcome,
+  ControlTest,
+  ControlTestListData,
+  ResponseMeta,
+  ControlTestListResponse,
+  ControlTestCreate,
+  ControlTestResponse,
+  ControlTestResult,
+};
+
+const endpoints = makeApi([
+  {
+    method: 'get',
+    path: '/v1/control-tests',
+    alias: 'listControlTests',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'cursor',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().gte(1).lte(200).optional().default(50),
+      },
+      {
+        name: 'status',
+        type: 'Query',
+        schema: z.enum(['scheduled', 'running', 'passed', 'failed']).optional(),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  id: z.string().regex(/^ctl_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  controlId: z.string(),
+                  schedule: z
+                    .enum(['continuous', 'daily', 'weekly', 'change_triggered'])
+                    .optional(),
+                  status: z.enum(['scheduled', 'running', 'passed', 'failed']),
+                  lastResultAt: z
+                    .string()
+                    .datetime({ offset: true })
+                    .optional(),
+                  lastOutcome: z.enum(['passed', 'failed']).optional(),
+                  ownerId: z.string().optional(),
+                  createdAt: z.string().datetime({ offset: true }),
+                  updatedAt: z.string().datetime({ offset: true }),
+                })
+                .passthrough()
+            ),
+            nextCursor: z.string().optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/control-tests',
+    alias: 'scheduleControlTest',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: scheduleControlTest_Body,
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string().regex(/^ctl_[0-9A-HJKMNP-TV-Z]{26}$/),
+            controlId: z.string(),
+            schedule: z
+              .enum(['continuous', 'daily', 'weekly', 'change_triggered'])
+              .optional(),
+            status: z.enum(['scheduled', 'running', 'passed', 'failed']),
+            lastResultAt: z.string().datetime({ offset: true }).optional(),
+            lastOutcome: z.enum(['passed', 'failed']).optional(),
+            ownerId: z.string().optional(),
+            createdAt: z.string().datetime({ offset: true }),
+            updatedAt: z.string().datetime({ offset: true }),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/control-tests/:testId/results',
+    alias: 'recordControlTestResult',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: recordControlTestResult_Body,
+      },
+      {
+        name: 'testId',
+        type: 'Path',
+        schema: z.string().regex(/^ctl_[0-9A-HJKMNP-TV-Z]{26}$/),
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string().regex(/^ctl_[0-9A-HJKMNP-TV-Z]{26}$/),
+            controlId: z.string(),
+            schedule: z
+              .enum(['continuous', 'daily', 'weekly', 'change_triggered'])
+              .optional(),
+            status: z.enum(['scheduled', 'running', 'passed', 'failed']),
+            lastResultAt: z.string().datetime({ offset: true }).optional(),
+            lastOutcome: z.enum(['passed', 'failed']).optional(),
+            ownerId: z.string().optional(),
+            createdAt: z.string().datetime({ offset: true }),
+            updatedAt: z.string().datetime({ offset: true }),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+]);
+
+export const api: any = new Zodios(
+  'https://api.ddd-codegen-starter.local/v1',
+  endpoints
+);
+
+export function createApiClient(baseUrl: string, options?: ZodiosOptions): any {
+  return new Zodios(baseUrl, endpoints, options);
+}

@@ -1,0 +1,247 @@
+openapi: 3.1.0
+info:
+  title: Baselines domain schemas
+  version: 0.1.0
+  description: Behavioural baselines, anomaly detections, and attack paths.
+paths: {}
+components:
+  schemas:
+    BaselineId:
+      type: string
+      pattern: '^bsl_[0-9A-HJKMNP-TV-Z]{26}$'
+      description: Prefixed behaviour baseline id.
+
+    AnomalyId:
+      type: string
+      pattern: '^anm_[0-9A-HJKMNP-TV-Z]{26}$'
+      description: Prefixed anomaly detection id.
+
+    PathId:
+      type: string
+      pattern: '^ath_[0-9A-HJKMNP-TV-Z]{26}$'
+      description: Prefixed attack-path id.
+
+    BaselineStatus:
+      type: string
+      enum: [draft, active, suspended]
+
+    AnomalyStatus:
+      type: string
+      enum: [raised, scored, queued, dismissed]
+
+    AttackPathStatus:
+      type: string
+      enum: [recommended, accepted, rejected]
+
+    AttackPathDecision:
+      type: string
+      enum: [accepted, rejected]
+
+    BehaviourBaseline:
+      x-dynamodb:
+        domain: BASELINES
+        entityType: BEHAVIOUR_BASELINE
+        entityTypePk: BEHAVIOUR_BASELINES
+        pkPattern: entity
+        pkPatternTemplate: "BEHAVIOUR_BASELINE#${id}"
+        skPatternTemplate: "METADATA"
+        tableType: core
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+      type: object
+      required: [id, name, status, lawfulBasis, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/BaselineId'
+        name:
+          type: string
+        status:
+          $ref: '#/components/schemas/BaselineStatus'
+        population:
+          type: string
+        purpose:
+          type: string
+        lawfulBasis:
+          type: string
+        privacyOfficerId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    BehaviourBaselineCreate:
+      type: object
+      required: [name, population, purpose, lawfulBasis]
+      properties:
+        name:
+          type: string
+        population:
+          type: string
+        purpose:
+          type: string
+        lawfulBasis:
+          type: string
+        privacyOfficerId:
+          type: string
+
+    AnomalyDetection:
+      x-dynamodb:
+        domain: BASELINES
+        entityType: ANOMALY_DETECTION
+        entityTypePk: ANOMALY_DETECTIONS
+        pkPattern: entity
+        pkPatternTemplate: "ANOMALY_DETECTION#${id}"
+        skPatternTemplate: "METADATA"
+        tableType: core
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+      type: object
+      required: [id, baselineId, status, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/AnomalyId'
+        baselineId:
+          $ref: '#/components/schemas/BaselineId'
+        alertId:
+          type: string
+          pattern: '^alt_[0-9A-HJKMNP-TV-Z]{26}$'
+        status:
+          $ref: '#/components/schemas/AnomalyStatus'
+        description:
+          type: string
+        raisedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AttackPath:
+      x-dynamodb:
+        domain: BASELINES
+        entityType: ATTACK_PATH
+        entityTypePk: ATTACK_PATHS
+        pkPattern: entity
+        pkPatternTemplate: "ATTACK_PATH#${id}"
+        skPatternTemplate: "METADATA"
+        tableType: core
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+      type: object
+      required: [id, entryPoint, status, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/PathId'
+        entryPoint:
+          type: string
+        likelyPath:
+          type: array
+          items:
+            type: string
+        recommendedAction:
+          type: string
+        assetCriticality:
+          type: string
+        status:
+          $ref: '#/components/schemas/AttackPathStatus'
+        explanation:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AttackPathDecisionRequest:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          $ref: '#/components/schemas/AttackPathDecision'
+        rationale:
+          type: string
+
+    BehaviourBaselineListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BehaviourBaseline'
+        nextCursor:
+          type: string
+
+    AnomalyDetectionListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnomalyDetection'
+        nextCursor:
+          type: string
+
+    AttackPathListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttackPath'
+        nextCursor:
+          type: string
+
+    BehaviourBaselineResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/BehaviourBaseline'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    BehaviourBaselineListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/BehaviourBaselineListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    AnomalyDetectionListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/AnomalyDetectionListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    AttackPathResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/AttackPath'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    AttackPathListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/AttackPathListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

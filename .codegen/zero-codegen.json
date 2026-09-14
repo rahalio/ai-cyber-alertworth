@@ -1,0 +1,129 @@
+{
+  "domains": [
+    {
+      "name": "identity",
+      "enabled": true,
+      "spec_path": "identity.yaml",
+      "bundled_path": ".bundled/identity.json"
+    },
+    {
+      "name": "events",
+      "enabled": true,
+      "spec_path": "events.yaml",
+      "bundled_path": "events.json",
+      "entity_schema_overrides": null,
+      "operation_aliases": null
+    },
+    {
+      "name": "scoring",
+      "enabled": true,
+      "spec_path": "scoring.yaml",
+      "bundled_path": "scoring.json",
+      "entity_schema_overrides": null,
+      "operation_aliases": null
+    },
+    {
+      "name": "triage",
+      "enabled": true,
+      "spec_path": "triage.yaml",
+      "bundled_path": "triage.json",
+      "entity_schema_overrides": null,
+      "operation_aliases": null
+    },
+    {
+      "name": "investigations",
+      "enabled": true,
+      "spec_path": "investigations.yaml",
+      "bundled_path": "investigations.json",
+      "entity_schema_overrides": null,
+      "operation_aliases": null
+    },
+    {
+      "name": "baselines",
+      "enabled": true,
+      "spec_path": "baselines.yaml",
+      "bundled_path": "baselines.json",
+      "entity_schema_overrides": null,
+      "operation_aliases": null
+    },
+    {
+      "name": "controls",
+      "enabled": true,
+      "spec_path": "controls.yaml",
+      "bundled_path": "controls.json",
+      "entity_schema_overrides": null,
+      "operation_aliases": null
+    },
+    {
+      "name": "indicators",
+      "enabled": true,
+      "spec_path": "indicators.yaml",
+      "bundled_path": "indicators.json",
+      "entity_schema_overrides": null,
+      "operation_aliases": null
+    },
+    {
+      "name": "reporting",
+      "enabled": true,
+      "spec_path": "reporting.yaml",
+      "bundled_path": "reporting.json",
+      "entity_schema_overrides": null,
+      "operation_aliases": null
+    }
+  ],
+  "paths": {
+    "project_root": ".",
+    "openapi_dir": "packages/openapi-core/src",
+    "bundled_dir": "packages/openapi-core/src/.bundled",
+    "output": {
+      "core": {
+        "base": "packages/core/src",
+        "imports": {
+          "types": "@alertworth/core",
+          "repositories": "@alertworth/core",
+          "handlers": "@alertworth/core",
+          "schemas": "@alertworth/core",
+          "validators": "@alertworth/core",
+          "converters": "@alertworth/core",
+          "shared_helpers": "@alertworth/core/_shared/helpers",
+          "shared_repositories": "@alertworth/core/_shared/repositories",
+          "shared_types": "@alertworth/core/_shared/types"
+        }
+      },
+      "services": {
+        "base": "platform/services/src",
+        "imports": {
+          "types": "@alertworth/core",
+          "repositories": "@alertworth/core",
+          "handlers": "@alertworth/core",
+          "schemas": "@alertworth/core",
+          "validators": "@alertworth/core",
+          "converters": "@alertworth/core",
+          "shared_helpers": "@alertworth/core/_shared/helpers",
+          "shared_repositories": "@alertworth/core/_shared/repositories",
+          "shared_types": "@alertworth/core/_shared/types"
+        }
+      },
+      "adapters": {
+        "base": "platform/adapters/src",
+        "imports": {
+          "types": "@alertworth/core",
+          "repositories": "@alertworth/core",
+          "handlers": "@alertworth/core",
+          "schemas": "@alertworth/core",
+          "validators": "@alertworth/core",
+          "converters": "@alertworth/core",
+          "shared_helpers": "@alertworth/core/_shared/helpers",
+          "shared_repositories": "@alertworth/core/_shared/repositories",
+          "shared_types": "@alertworth/core/_shared/types"
+        }
+      },
+      "api_server": {
+        "base": "platform/api-server/src/domains"
+      }
+    }
+  },
+  "package_name": "@alertworth/core",
+  "package_scope": "@alertworth",
+  "version": "2.0.0"
+}

@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg: #0b0f14;
+  --color-panel: #131a22;
+  --color-rule: #2b3642;
+  --color-worth: #e09a3e;
+  --color-worth-dim: #8a5a24;
+  --color-minutes: #4fae8c;
+  --color-overflow: #d4564e;
+  --color-fresh: #6b8fbf;
+  --color-stale: #a89b6a;
+  --color-steel: #8a97a6;
+  --color-brand: #c9d2da;
+  --color-ink: #e7eef5;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --motion-admit: 160ms ease-out;
+  --motion-overflow: 280ms;
+  --motion-degrade: 320ms ease-in-out;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(900px 480px at 0% -8%, color-mix(in srgb, var(--color-worth) 7%, transparent), transparent 52%),
+    radial-gradient(700px 420px at 100% 0%, color-mix(in srgb, var(--color-minutes) 5%, transparent), transparent 48%),
+    linear-gradient(180deg, #0d131a, var(--color-bg));
+  color: var(--color-ink);
+  font-family: var(--font-plex), 'IBM Plex Sans', system-ui, sans-serif;
+}
+
+@layer utilities {
+  .factory-grid {
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background-image:
+      linear-gradient(color-mix(in srgb, var(--color-rule) 35%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--color-rule) 35%, transparent) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
+    opacity: 0.22;
+  }
+}

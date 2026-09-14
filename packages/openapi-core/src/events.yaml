@@ -1,0 +1,77 @@
+openapi: 3.1.0
+info:
+  title: Alertworth Events API
+  version: 0.1.0
+  description: |
+    Ingest and list security events from SIEM, EDR, identity, and threat intel.
+  x-domain: evt
+  x-product: alertworth
+servers:
+  - url: https://api.alertworth.local
+security:
+  - apiKey: []
+tags:
+  - name: Events
+    description: Ingested security events from SIEM, EDR, identity, and intel
+paths:
+  /v1/events:
+    get:
+      operationId: listSecurityEvents
+      tags: [Events]
+      summary: List security events
+      x-repository: SecurityEvent
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: source
+          in: query
+          schema:
+            $ref: ./events.schemas.yaml#/components/schemas/EventSource
+      responses:
+        '200':
+          description: Security events page
+          content:
+            application/json:
+              schema:
+                $ref: ./events.schemas.yaml#/components/schemas/SecurityEventListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: ingestSecurityEvent
+      tags: [Events]
+      summary: Ingest a security event
+      x-repository: SecurityEvent
+      security:
+        - apiKey: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./events.schemas.yaml#/components/schemas/SecurityEventIngest
+      responses:
+        '202':
+          description: Event accepted for scoring
+          content:
+            application/json:
+              schema:
+                $ref: ./events.schemas.yaml#/components/schemas/SecurityEventResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth
